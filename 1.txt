@@ -1,0 +1,512 @@
+You’re basically describing an ad hoc data-lake lens—not storage itself, but a system to introspect, compare, and map heterogeneous sources. Let’s make it schema-first and modular so you can plug it into whatever stack you want.
+
+---
+
+1. Core concepts and mental model
+
+Goal: Given multiple data sources (DBs, APIs, files), you want to:
+
+- Inventory: Discover and normalize their structural metadata.
+- Compare: See overlaps, conflicts, and gaps between sources.
+- Map: Define and manage mappings between fields/entities across sources.
+- Visualize: Provide a UI for exploring intersections and differences.
+
+Think of it as:
+
+- Metadata graph: Nodes = sources, datasets, fields; edges = mappings, overlaps, lineage.
+- Comparison engine: Computes similarity, overlap, and conflicts.
+- Mapping layer: Human-curated + machine-suggested mappings.
+- UI: Schema explorer + comparison views + mapping editor.
+
+---
+
+2. Canonical schema model (JSON Schema + conceptual)
+
+2.1. Data source
+
+`json
+{
+  "$id": "DataSource",
+  "type": "object",
+  "required": ["id", "name", "kind", "connection"],
+  "properties": {
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": ["postgres", "mysql", "mssql", "bigquery", "s3", "gcs", "rest_api", "csv", "parquet", "other"]
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "connection": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}
+`
+
+2.2. Dataset (table, view, file, API resource)
+
+`json
+{
+  "$id": "Dataset",
+  "type": "object",
+  "required": ["id", "sourceId", "name", "logicalType"],
+  "properties": {
+    "id": { "type": "string" },
+    "sourceId": { "type": "string" },
+    "name": { "type": "string" },
+    "path": { "type": "string" },
+    "logicalType": {
+      "type": "string",
+      "enum": ["table", "view", "file", "api_resource", "stream"]
+    },
+    "rowCountEstimate": { "type": "number" },
+    "sampleProfileId": { "type": "string" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}
+`
+
+2.3. Field (column / attribute)
+
+`json
+{
+  "$id": "Field",
+  "type": "object",
+  "required": ["id", "datasetId", "name", "physicalType"],
+  "properties": {
+    "id": { "type": "string" },
+    "datasetId": { "type": "string" },
+    "name": { "type": "string" },
+    "physicalType": { "type": "string" },
+    "logicalType": {
+      "type": "string",
+      "enum": [
+        "id", "foreign_key", "timestamp", "date", "string", "numeric",
+        "boolean", "json", "categorical", "geospatial", "other"
+      ]
+    },
+    "nullable": { "type": "boolean" },
+    "cardinalityEstimate": { "type": "number" },
+    "sampleStatsId": { "type": "string" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}
+`
+
+2.4. Field mapping (cross-source mapping unit)
+
+`json
+{
+  "$id": "FieldMapping",
+  "type": "object",
+  "required": ["id", "leftFieldId", "rightFieldId", "status"],
+  "properties": {
+    "id": { "type": "string" },
+    "leftFieldId": { "type": "string" },
+    "rightFieldId": { "type": "string" },
+    "similarityScore": { "type": "number" },
+    "status": {
+      "type": "string",
+      "enum": ["suggested", "accepted", "rejected", "deprecated"]
+    },
+    "transformation": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["identity", "cast", "normalize", "lookup", "custom_expression"]
+        },
+        "expression": { "type": "string" }
+      },
+      "required": ["kind"],
+      "additionalProperties": false
+    },
+    "notes": { "type": "string" },
+    "createdBy": { "type": "string" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}
+`
+
+2.5. Overlap / comparison profile
+
+This is the “result” of comparing two datasets or fields.
+
+`json
+{
+  "$id": "OverlapProfile",
+  "type": "object",
+  "required": ["id", "leftDatasetId", "rightDatasetId", "mode"],
+  "properties": {
+    "id": { "type": "string" },
+    "leftDatasetId": { "type": "string" },
+    "rightDatasetId": { "type": "string" },
+    "mode": {
+      "type": "string",
+      "enum": ["schemaonly", "samplerows", "full_stats"]
+    },
+    "fieldComparisons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["leftFieldId", "rightFieldId"],
+        "properties": {
+          "leftFieldId": { "type": "string" },
+          "rightFieldId": { "type": "string" },
+          "nameSimilarity": { "type": "number" },
+          "typeCompatibility": { "type": "string" },
+          "valueOverlap": {
+            "type": "object",
+            "properties": {
+              "jaccard": { "type": "number" },
+              "nullRateDiff": { "type": "number" },
+              "distributionDistance": { "type": "number" }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "rowOverlapEstimate": {
+      "type": "object",
+      "properties": {
+        "joinKeyFieldMappingIds": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "overlapRate": { "type": "number" },
+        "leftOnlyRate": { "type": "number" },
+        "rightOnlyRate": { "type": "number" }
+      }
+    },
+    "createdAt": { "type": "string", "format": "date-time" }
+  }
+}
+`
+
+---
+
+3. Comparison and mapping engine (logic)
+
+3.1. Schema-level comparison
+
+For each pair of datasets:
+
+- Name similarity:  
+  - Metric: e.g., cosine similarity on tokenized names, Levenshtein distance, Jaro-Winkler.
+- Type compatibility:  
+  - Rule-based: numeric↔numeric, string↔string, date↔timestamp, etc.
+- Heuristics:  
+  - Key candidates: high-cardinality, low-null, often named id, *_id, uuid.
+  - Foreign keys: name patterns + value overlap with other fields.
+
+Output: a ranked list of candidate field pairs with similarity scores.
+
+3.2. Value-level comparison (optional, sampling)
+
+For candidate field pairs:
+
+- Categorical / low-cardinality: Jaccard on value sets.
+- Numeric: distribution distance (e.g., KS statistic, Wasserstein).
+- Timestamps: coverage overlap (time ranges).
+
+You can treat these as pluggable “metrics”:
+
+`ts
+export type MetricResult = {
+  metric: string;
+  value: number;
+  details?: Record<string, unknown>;
+};
+
+export type FieldComparisonResult = {
+  leftFieldId: string;
+  rightFieldId: string;
+  metrics: MetricResult[];
+};
+`
+
+3.3. Mapping lifecycle
+
+- Suggested: created by engine, status = "suggested".
+- Accepted / rejected: user action in UI.
+- Deprecated: when underlying schema changes or conflicts detected.
+
+This gives you a versionable mapping graph you can reuse for ETL, views, or reporting.
+
+---
+
+4. API surface (minimal but complete)
+
+Assume a simple REST/JSON backend.
+
+4.1. Core endpoints
+
+- Sources & datasets
+  - GET /sources
+  - POST /sources
+  - GET /sources/{id}/datasets
+  - POST /datasets/discover (trigger schema discovery for a source)
+
+- Fields & profiles
+  - GET /datasets/{id}/fields
+  - GET /fields/{id}/profile (stats, sample)
+
+- Comparisons
+  - POST /compare/datasets
+    - Body: { "leftDatasetId": "...", "rightDatasetId": "...", "mode": "schemaonly|samplerows|full_stats" }
+  - GET /overlaps/{id}
+
+- Mappings
+  - GET /mappings?leftFieldId=&rightFieldId=
+  - POST /mappings
+  - PATCH /mappings/{id} (update status, transformation, notes)
+
+4.2. TypeScript interfaces (frontend/shared)
+
+`ts
+export interface DataSource {
+  id: string;
+  name: string;
+  kind: string;
+  tags?: string[];
+  connection: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+}
+
+export interface Dataset {
+  id: string;
+  sourceId: string;
+  name: string;
+  path?: string;
+  logicalType: string;
+  rowCountEstimate?: number;
+  sampleProfileId?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface Field {
+  id: string;
+  datasetId: string;
+  name: string;
+  physicalType: string;
+  logicalType?: string;
+  nullable?: boolean;
+  cardinalityEstimate?: number;
+  sampleStatsId?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface FieldMapping {
+  id: string;
+  leftFieldId: string;
+  rightFieldId: string;
+  similarityScore?: number;
+  status: "suggested" | "accepted" | "rejected" | "deprecated";
+  transformation?: {
+    kind: "identity" | "cast" | "normalize" | "lookup" | "custom_expression";
+    expression?: string;
+  };
+  notes?: string;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+`
+
+---
+
+5. UI architecture and key views
+
+Let’s keep it modular and schema-driven.
+
+5.1. High-level layout
+
+- Left panel: Source & dataset explorer.
+- Center: Schema / comparison canvas.
+- Right panel: Details + mapping editor.
+
+5.2. Views
+
+5.2.1. Source & dataset explorer
+
+- Tree:  
+  - Level 1: Data sources.  
+  - Level 2: Datasets per source.  
+- Actions:  
+  - Discover schema for a source.  
+  - Select two datasets to compare.
+
+5.2.2. Dataset schema view
+
+For a single dataset:
+
+- Table of fields:
+  - Name, physical type, logical type, cardinality, null rate.
+- Field-level actions:
+  - View profile.
+  - Show existing mappings.
+  - “Find similar fields in other datasets.”
+
+5.2.3. Dataset comparison view
+
+When two datasets are selected:
+
+- Top summary:
+  - Number of fields on each side.
+  - Count of suggested/accepted mappings.
+  - Row overlap estimate (if available).
+
+- Field alignment table:
+  - Left field | similarity | right field | type compatibility | mapping status.
+- Actions:
+  - Accept / reject mapping.
+  - Edit transformation.
+  - Create new mapping manually.
+
+You can also offer a “bipartite graph” visualization: fields on left/right, edges = mappings, colored by status.
+
+5.2.4. Mapping editor
+
+- Form:
+  - Left field (fixed).
+  - Right field (fixed).
+  - Status dropdown.
+  - Transformation kind + expression editor (e.g., SQL snippet or DSL).
+  - Notes.
+
+---
+
+6. Example React component skeletons
+
+Very minimal, just to show structure.
+
+6.1. Dataset comparison table
+
+`tsx
+type FieldSummary = {
+  id: string;
+  name: string;
+  physicalType: string;
+};
+
+type FieldComparisonRow = {
+  leftField: FieldSummary | null;
+  rightField: FieldSummary | null;
+  similarityScore?: number;
+  typeCompatibility?: string;
+  mapping?: FieldMapping | null;
+};
+
+interface DatasetComparisonProps {
+  leftDataset: Dataset;
+  rightDataset: Dataset;
+  rows: FieldComparisonRow[];
+  onMappingChange: (mapping: FieldMapping) => void;
+}
+
+export const DatasetComparisonTable: React.FC<DatasetComparisonProps> = ({
+  leftDataset,
+  rightDataset,
+  rows,
+  onMappingChange
+}) => {
+  return (
+    <div className="comparison-table">
+      <h3>
+        {leftDataset.name} ↔ {rightDataset.name}
+      </h3>
+      <table>
+        <thead>
+          <tr>
+            <th>{leftDataset.name} field</th>
+            <th>Similarity</th>
+            <th>Type compatibility</th>
+            <th>{rightDataset.name} field</th>
+            <th>Mapping status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={${row.leftField?.id ?? "null"}-${row.rightField?.id ?? "null"}}>
+              <td>{row.leftField?.name ?? "—"}</td>
+              <td>{row.similarityScore?.toFixed(2) ?? "—"}</td>
+              <td>{row.typeCompatibility ?? "—"}</td>
+              <td>{row.rightField?.name ?? "—"}</td>
+              <td>
+                {row.mapping ? (
+                  <select
+                    value={row.mapping.status}
+                    onChange={(e) =>
+                      onMappingChange({ ...row.mapping!, status: e.target.value as FieldMapping["status"] })
+                    }
+                  >
+                    <option value="suggested">suggested</option>
+                    <option value="accepted">accepted</option>
+                    <option value="rejected">rejected</option>
+                    <option value="deprecated">deprecated</option>
+                  </select>
+                ) : (
+                  <button
+                    onClick={() =>
+                      row.leftField &&
+                      row.rightField &&
+                      onMappingChange({
+                        id: crypto.randomUUID(),
+                        leftFieldId: row.leftField.id,
+                        rightFieldId: row.rightField.id,
+                        status: "accepted"
+                      })
+                    }
+                  >
+                    Create mapping
+                  </button>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+`
+
+---
+
+7. How this becomes an “ad hoc data lake”
+
+You’re not centralizing raw data; you’re centralizing:
+
+- Structural metadata: sources, datasets, fields.
+- Statistical profiles: cardinality, distributions, overlaps.
+- Semantic mappings: how fields and entities correspond.
+
+From there you can:
+
+- Generate virtual unified schemas (e.g., “Customer” entity across 3 systems).
+- Drive on-demand joins or federated queries using the mapping graph.
+- Feed downstream ETL or semantic layers with a clean, versioned mapping model.
+
+---
+
+If you want, next step we can:
+
+- Go deeper into the metric plug-in architecture (DAG of comparison operations).
+- Or design a mapping DSL that compiles to SQL / Spark / dbt for actual data movement.
