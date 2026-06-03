@@ -1,0 +1,13 @@
+{
+  "id": "range_overlap",
+  "op": "metric",
+  "description": "Overlap of min/max ranges.",
+  "inputs": [
+    { "name": "leftStats", "type": "object" },
+    { "name": "rightStats", "type": "object" }
+  ],
+  "outputs": [
+    { "name": "overlap", "type": "number" }
+  ],
+  "config": {}
+}
