@@ -1,0 +1,13 @@
+{
+  "id": "container_equivalence",
+  "op": "metric",
+  "description": "Checks if two container formats (MP4/MKV/etc.) are equivalent.",
+  "inputs": [
+    { "name": "left", "type": "volume_ref" },
+    { "name": "right", "type": "volume_ref" }
+  ],
+  "outputs": [
+    { "name": "equivalent", "type": "boolean" }
+  ],
+  "config": {}
+}
