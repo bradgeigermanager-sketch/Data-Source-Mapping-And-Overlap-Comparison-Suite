@@ -1,0 +1,13 @@
+{
+  "id": "size_match",
+  "op": "metric",
+  "description": "Checks if two volumes have identical byte size.",
+  "inputs": [
+    { "name": "left", "type": "volume_ref" },
+    { "name": "right", "type": "volume_ref" }
+  ],
+  "outputs": [
+    { "name": "match", "type": "boolean" }
+  ],
+  "config": {}
+}
