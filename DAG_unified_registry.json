@@ -1,0 +1,9 @@
+{
+  "id": "metric_dag_default",
+  "kind": "metric_dag",
+  "version": "1.2.0",
+  "graph": { /* DAG JSON */ },
+  "createdBy": "system",
+  "createdAt": "2026-06-03T14:00:00Z",
+  "tags": ["default", "similarity", "schema"]
+}
