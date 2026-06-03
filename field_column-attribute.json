@@ -1,0 +1,25 @@
+{
+  "$id": "Field",
+  "type": "object",
+  "required": ["id", "datasetId", "name", "physicalType"],
+  "properties": {
+    "id": { "type": "string" },
+    "datasetId": { "type": "string" },
+    "name": { "type": "string" },
+    "physicalType": { "type": "string" },
+    "logicalType": {
+      "type": "string",
+      "enum": [
+        "id", "foreign_key", "timestamp", "date", "string", "numeric",
+        "boolean", "json", "categorical", "geospatial", "other"
+      ]
+    },
+    "nullable": { "type": "boolean" },
+    "cardinalityEstimate": { "type": "number" },
+    "sampleStatsId": { "type": "string" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}
