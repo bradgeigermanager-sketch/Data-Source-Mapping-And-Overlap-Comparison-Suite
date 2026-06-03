@@ -1,0 +1,14 @@
+{
+  "id": "blockwise_overlap",
+  "op": "metric",
+  "inputs": [
+    { "name": "left", "type": "volume_ref" },
+    { "name": "right", "type": "volume_ref" }
+  ],
+  "outputs": [
+    { "name": "overlap", "type": "number" }
+  ],
+  "config": {
+    "blockSize": 4096
+  }
+}
