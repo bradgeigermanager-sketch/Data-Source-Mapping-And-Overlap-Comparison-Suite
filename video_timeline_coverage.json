@@ -1,0 +1,13 @@
+{
+  "id": "video_timeline_coverage",
+  "op": "metric",
+  "description": "Compares duration, frame rate, and timeline alignment.",
+  "inputs": [
+    { "name": "left", "type": "volume_ref" },
+    { "name": "right", "type": "volume_ref" }
+  ],
+  "outputs": [
+    { "name": "coverage", "type": "semantic_score" }
+  ],
+  "config": {}
+}
