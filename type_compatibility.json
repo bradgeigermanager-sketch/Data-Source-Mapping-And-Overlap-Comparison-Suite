@@ -1,0 +1,13 @@
+{
+  "id": "type_compatibility",
+  "op": "metric",
+  "description": "Checks logical and physical type compatibility.",
+  "inputs": [
+    { "name": "left", "type": "field_ref" },
+    { "name": "right", "type": "field_ref" }
+  ],
+  "outputs": [
+    { "name": "compatible", "type": "boolean" }
+  ],
+  "config": {}
+}
