@@ -1,0 +1,15 @@
+{
+  "id": "name_similarity",
+  "op": "metric",
+  "inputs": [
+    { "name": "left", "type": "field_ref" },
+    { "name": "right", "type": "field_ref" }
+  ],
+  "outputs": [
+    { "name": "score", "type": "number" }
+  ],
+  "config": {
+    "method": "cosine",
+    "tokenizer": "camel_case"
+  }
+}
