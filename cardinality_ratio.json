@@ -1,0 +1,13 @@
+{
+  "id": "cardinality_ratio",
+  "op": "metric",
+  "description": "Ratio of distinct counts between fields.",
+  "inputs": [
+    { "name": "leftStats", "type": "object" },
+    { "name": "rightStats", "type": "object" }
+  ],
+  "outputs": [
+    { "name": "ratio", "type": "number" }
+  ],
+  "config": {}
+}
