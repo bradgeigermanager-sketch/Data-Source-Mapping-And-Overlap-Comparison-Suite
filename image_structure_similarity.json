@@ -1,0 +1,13 @@
+{
+  "id": "image_structure_similarity",
+  "op": "metric",
+  "description": "Structural similarity (SSIM-like) between images.",
+  "inputs": [
+    { "name": "left", "type": "volume_ref" },
+    { "name": "right", "type": "volume_ref" }
+  ],
+  "outputs": [
+    { "name": "similarity", "type": "semantic_score" }
+  ],
+  "config": {}
+}
