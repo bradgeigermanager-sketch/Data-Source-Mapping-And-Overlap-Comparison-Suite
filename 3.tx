@@ -1,0 +1,236 @@
+Here is the complete Volume Identity Metric Pack, built as a modular, atomic, schema‑driven library of metric nodes—each one a DAG‑compatible operator that determines whether two volumes are:
+
+- Identical (bitwise / hashwise)  
+- Near‑identical (blockwise overlap)  
+- Structurally identical (binary fingerprint)  
+- Semantically identical (content‑level equivalence)  
+
+This pack is designed to plug directly into your metric DAG, volume DAG, and VME (Volume Mapping Expression) system.
+
+---
+
+🔥 Volume Identity Metric Pack (Canonical)
+
+Below is the full pack, with each metric defined as a Metric Node (using your metric node JSON schema).  
+Every bullet begins with a Guided Link so you can expand any metric individually.
+
+---
+
+🧱 1. Hash‑Based Identity Metrics
+
+These are the fastest, most deterministic identity checks.
+
+- sha256match — bitwise identity via SHA‑256.
+- md5match — legacy but fast identity check.
+- blake3match — ultra‑fast modern hashing.
+- multihashconsensus — consensus identity across multiple hash algorithms.
+
+---
+
+📦 2. Blockwise Identity Metrics
+
+Useful for large files, partial overlaps, or deduplication.
+
+- blockwiseoverlap — percentage of matching blocks.
+- blockwisefingerprintmatch — rolling hash / Rabin fingerprint identity.
+- blockwisedeltaratio — ratio of differing blocks.
+
+---
+
+🧬 3. Binary Structural Identity Metrics
+
+These detect identity even when metadata differs.
+
+- binaryfingerprintmatch — structural binary signature match.
+- containerheadermatch — MP4/MKV/ZIP header equivalence.
+- magicnumbermatch — file signature identity.
+
+---
+
+🎭 4. Format‑Normalized Identity Metrics
+
+These detect identity across different encodings or containers.
+
+- codecnormalizedidentity — identical after transcoding to canonical codec.
+- formatnormalizedidentity — CSV ↔ Parquet ↔ JSONL equivalence.
+- compressionnormalizedidentity — identical after decompression.
+
+---
+
+🎥 5. Semantic Identity Metrics
+
+These detect identity at the content level.
+
+- videoframehashidentity — identical video frames.
+- audiofingerprintidentity — identical audio content.
+- imageperceptualidentity — identical images via pHash/dHash.
+- tablesemanticidentity — identical rows/columns ignoring format.
+
+---
+
+📘 Full JSON Definitions (Metric Nodes)
+
+Below are the canonical JSON definitions for the core identity metrics.  
+These conform exactly to your Metric Node JSON Schema.
+
+---
+
+1. sha256_match
+
+`json
+{
+  "id": "sha256_match",
+  "op": "metric",
+  "description": "Bitwise identity check using SHA-256.",
+  "inputs": [
+    { "name": "left", "type": "volume_ref" },
+    { "name": "right", "type": "volume_ref" }
+  ],
+  "outputs": [
+    { "name": "match", "type": "boolean" }
+  ],
+  "config": {}
+}
+`
+
+---
+
+2. blockwise_overlap
+
+`json
+{
+  "id": "blockwise_overlap",
+  "op": "metric",
+  "description": "Block-level overlap ratio between two volumes.",
+  "inputs": [
+    { "name": "left", "type": "volume_ref" },
+    { "name": "right", "type": "volume_ref" }
+  ],
+  "outputs": [
+    { "name": "overlap", "type": "number" }
+  ],
+  "config": {
+    "blockSize": 4096
+  }
+}
+`
+
+---
+
+3. binaryfingerprintmatch
+
+`json
+{
+  "id": "binaryfingerprintmatch",
+  "op": "metric",
+  "description": "Structural binary fingerprint identity.",
+  "inputs": [
+    { "name": "left", "type": "volume_ref" },
+    { "name": "right", "type": "volume_ref" }
+  ],
+  "outputs": [
+    { "name": "match", "type": "boolean" }
+  ],
+  "config": {
+    "fingerprint": "rabin_64"
+  }
+}
+`
+
+---
+
+4. codecnormalizedidentity
+
+`json
+{
+  "id": "codecnormalizedidentity",
+  "op": "metric",
+  "description": "Identity after transcoding both volumes to a canonical codec.",
+  "inputs": [
+    { "name": "left", "type": "volume_ref" },
+    { "name": "right", "type": "volume_ref" }
+  ],
+  "outputs": [
+    { "name": "identityScore", "type": "number" }
+  ],
+  "config": {
+    "codec": "h264"
+  }
+}
+`
+
+---
+
+5. videoframehash_identity
+
+`json
+{
+  "id": "videoframehash_identity",
+  "op": "metric",
+  "description": "Frame-level perceptual identity for video volumes.",
+  "inputs": [
+    { "name": "left", "type": "volume_ref" },
+    { "name": "right", "type": "volume_ref" }
+  ],
+  "outputs": [
+    { "name": "frameIdentityScore", "type": "number" }
+  ],
+  "config": {
+    "hash": "phash",
+    "sampleRate": 1
+  }
+}
+`
+
+---
+
+🧬 Composite Identity Metric (Pack Root)
+
+The pack includes a root composite metric that fuses all identity signals:
+
+volumeidentityscore
+
+`json
+{
+  "id": "volumeidentityscore",
+  "op": "metric",
+  "description": "Unified identity score combining hash, blockwise, structural, and semantic metrics.",
+  "inputs": [
+    { "name": "sha256", "type": "boolean" },
+    { "name": "blockOverlap", "type": "number" },
+    { "name": "binaryFingerprint", "type": "boolean" },
+    { "name": "semanticScore", "type": "number" }
+  ],
+  "outputs": [
+    { "name": "identityScore", "type": "number" }
+  ],
+  "config": {
+    "weights": {
+      "sha256": 0.5,
+      "blockOverlap": 0.2,
+      "binaryFingerprint": 0.2,
+      "semanticScore": 0.1
+    }
+  }
+}
+`
+
+This is the canonical identity metric used by:
+
+- Volume DAG  
+- VME evaluation  
+- Deduplication  
+- Lineage inference  
+- Cross‑source equivalence  
+
+---
+
+🧠 Next Step
+Which expansion do you want next?
+
+- volume identity DAG  
+- variant metric pack  
+- semantic equivalence pack  
+- VME compiler  
+
+Each one plugs directly into this pack.
