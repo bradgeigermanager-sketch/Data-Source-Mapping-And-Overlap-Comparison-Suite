@@ -1,0 +1,13 @@
+{
+  "id": "schema_fingerprint_match",
+  "op": "metric",
+  "description": "Checks if schema fingerprints match.",
+  "inputs": [
+    { "name": "left", "type": "dataset_ref" },
+    { "name": "right", "type": "dataset_ref" }
+  ],
+  "outputs": [
+    { "name": "match", "type": "boolean" }
+  ],
+  "config": {}
+}
