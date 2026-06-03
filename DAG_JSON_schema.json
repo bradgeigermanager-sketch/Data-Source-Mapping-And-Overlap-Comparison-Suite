@@ -1,0 +1,133 @@
+{
+  "$id": "https://example.com/schema/dag.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Directed Acyclic Graph (DAG)",
+  "type": "object",
+  "required": ["id", "version", "kind", "nodes", "edges"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique DAG identifier."
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of this DAG definition."
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "metric_dag",
+        "mapping_dag",
+        "volume_dag",
+        "transformation_dag",
+        "lineage_dag"
+      ],
+      "description": "DAG category."
+    },
+    "description": {
+      "type": "string"
+    },
+    "nodes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Node" }
+    },
+    "edges": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Edge" }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+
+  "$defs": {
+    "Node": {
+      "type": "object",
+      "required": ["id", "op", "inputs", "outputs"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Node identifier unique within the DAG."
+        },
+        "op": {
+          "type": "string",
+          "description": "Operation type (metric, transform, compare, etc.)."
+        },
+        "config": {
+          "type": "object",
+          "description": "Operation-specific configuration.",
+          "additionalProperties": true
+        },
+        "inputs": {
+          "type": "array",
+          "description": "Logical input ports.",
+          "items": { "$ref": "#/$defs/Port" }
+        },
+        "outputs": {
+          "type": "array",
+          "description": "Logical output ports.",
+          "items": { "$ref": "#/$defs/Port" }
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "Port": {
+      "type": "object",
+      "required": ["name", "type"],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "description": "Data type flowing through this port.",
+          "enum": [
+            "number",
+            "string",
+            "boolean",
+            "object",
+            "array",
+            "binary",
+            "volume_ref",
+            "field_ref",
+            "dataset_ref",
+            "metric_result",
+            "mapping_expr",
+            "volume_expr"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "Edge": {
+      "type": "object",
+      "required": ["fromNode", "fromPort", "toNode", "toPort"],
+      "properties": {
+        "fromNode": {
+          "type": "string"
+        },
+        "fromPort": {
+          "type": "string"
+        },
+        "toNode": {
+          "type": "string"
+        },
+        "toPort": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
