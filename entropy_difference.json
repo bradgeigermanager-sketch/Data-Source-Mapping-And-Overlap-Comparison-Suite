@@ -1,0 +1,13 @@
+{
+  "id": "entropy_difference",
+  "op": "metric",
+  "description": "Difference in entropy between distributions.",
+  "inputs": [
+    { "name": "leftSample", "type": "array" },
+    { "name": "rightSample", "type": "array" }
+  ],
+  "outputs": [
+    { "name": "delta", "type": "number" }
+  ],
+  "config": {}
+}
