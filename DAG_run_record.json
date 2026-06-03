@@ -1,0 +1,11 @@
+{
+  "dagId": "metric_dag_001",
+  "version": "1.0.0",
+  "runId": "run_abc123",
+  "timestamp": "2026-06-03T14:00:00Z",
+  "nodeResults": {
+    "nodeA": { "outputs": { "similarity": 0.98 } },
+    "nodeB": { "outputs": { "compatible": true } },
+    "nodeC": { "outputs": { "semanticScore": 0.99 } }
+  }
+}
