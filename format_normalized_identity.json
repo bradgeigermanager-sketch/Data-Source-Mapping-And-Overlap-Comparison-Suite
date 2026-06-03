@@ -1,0 +1,15 @@
+{
+  "id": "format_normalized_identity",
+  "op": "metric",
+  "description": "Identity after converting both volumes to a canonical format.",
+  "inputs": [
+    { "name": "left", "type": "volume_ref" },
+    { "name": "right", "type": "volume_ref" }
+  ],
+  "outputs": [
+    { "name": "identityScore", "type": "number" }
+  ],
+  "config": {
+    "format": "parquet"
+  }
+}
