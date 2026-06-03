@@ -1,0 +1,232 @@
+Volume Mapping Expression JSON Schema (VME)
+
+`json
+{
+  "$id": "https://example.com/schema/volume-mapping-expression.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Volume Mapping Expression (VME)",
+  "type": "object",
+  "oneOf": [
+    { "$ref": "#/$defs/VolumeExpr" }
+  ],
+  "$defs": {
+    "VolumeId": {
+      "type": "string",
+      "description": "Opaque identifier of a volume in the system."
+    },
+
+    "VolumeRef": {
+      "type": "object",
+      "description": "Reference to a volume by ID.",
+      "required": ["kind", "volumeId"],
+      "properties": {
+        "kind": {
+          "const": "volume_ref"
+        },
+        "volumeId": {
+          "$ref": "#/$defs/VolumeId"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "LiteralBool": {
+      "type": "object",
+      "description": "Boolean literal expression.",
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": {
+          "const": "literal"
+        },
+        "value": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "HashCompare": {
+      "type": "object",
+      "description": "Compare hashes of two volumes using a given algorithm.",
+      "required": ["kind", "algo", "left", "right"],
+      "properties": {
+        "kind": {
+          "const": "hash_compare"
+        },
+        "algo": {
+          "type": "string",
+          "description": "Hash algorithm name, e.g. 'md5', 'sha1', 'sha256', 'blake3'."
+        },
+        "left": {
+          "$ref": "#/$defs/VolumeExpr"
+        },
+        "right": {
+          "$ref": "#/$defs/VolumeExpr"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "BlockCompare": {
+      "type": "object",
+      "description": "Blockwise comparison of two volumes.",
+      "required": ["kind", "blockSize", "left", "right"],
+      "properties": {
+        "kind": {
+          "const": "block_compare"
+        },
+        "blockSize": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Block size in bytes for blockwise comparison."
+        },
+        "left": {
+          "$ref": "#/$defs/VolumeExpr"
+        },
+        "right": {
+          "$ref": "#/$defs/VolumeExpr"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "TranscodeCompare": {
+      "type": "object",
+      "description": "Compare two volumes after (conceptual) transcoding/normalization to a common codec/format.",
+      "required": ["kind", "codec", "left", "right"],
+      "properties": {
+        "kind": {
+          "const": "transcode_compare"
+        },
+        "codec": {
+          "type": "string",
+          "description": "Target codec/format identifier used for comparison, e.g. 'h264', 'pcm_s16le', 'parquet'."
+        },
+        "left": {
+          "$ref": "#/$defs/VolumeExpr"
+        },
+        "right": {
+          "$ref": "#/$defs/VolumeExpr"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "SemanticCompare": {
+      "type": "object",
+      "description": "Semantic comparison of two volumes (content-level equivalence).",
+      "required": ["kind", "mode", "left", "right"],
+      "properties": {
+        "kind": {
+          "const": "semantic_compare"
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["video", "audio", "image", "table", "binary"],
+          "description": "Semantic comparison mode / domain."
+        },
+        "left": {
+          "$ref": "#/$defs/VolumeExpr"
+        },
+        "right": {
+          "$ref": "#/$defs/VolumeExpr"
+        },
+        "config": {
+          "type": "object",
+          "description": "Optional mode-specific configuration (e.g. tolerance thresholds).",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "BinaryOp": {
+      "type": "object",
+      "description": "Logical combination of two volume expressions.",
+      "required": ["kind", "op", "left", "right"],
+      "properties": {
+        "kind": {
+          "const": "binary_op"
+        },
+        "op": {
+          "type": "string",
+          "enum": ["AND", "OR"],
+          "description": "Logical operator."
+        },
+        "left": {
+          "$ref": "#/$defs/VolumeExpr"
+        },
+        "right": {
+          "$ref": "#/$defs/VolumeExpr"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "VolumeExpr": {
+      "description": "Union of all Volume Mapping Expression node types.",
+      "oneOf": [
+        { "$ref": "#/$defs/VolumeRef" },
+        { "$ref": "#/$defs/LiteralBool" },
+        { "$ref": "#/$defs/HashCompare" },
+        { "$ref": "#/$defs/BlockCompare" },
+        { "$ref": "#/$defs/TranscodeCompare" },
+        { "$ref": "#/$defs/SemanticCompare" },
+        { "$ref": "#/$defs/BinaryOp" }
+      ]
+    },
+
+    "VolumeMappingStatus": {
+      "type": "string",
+      "enum": ["identical", "variant", "equivalent", "unrelated"],
+      "description": "High-level classification of the relationship between two volumes."
+    },
+
+    "VolumeMapping": {
+      "type": "object",
+      "description": "A mapping record between two volumes, with an associated VME and metrics.",
+      "required": ["id", "leftVolumeId", "rightVolumeId", "status", "expression"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "leftVolumeId": {
+          "$ref": "#/$defs/VolumeId"
+        },
+        "rightVolumeId": {
+          "$ref": "#/$defs/VolumeId"
+        },
+        "status": {
+          "$ref": "#/$defs/VolumeMappingStatus"
+        },
+        "expression": {
+          "$ref": "#/$defs/VolumeExpr"
+        },
+        "metrics": {
+          "type": "object",
+          "description": "Optional metric outputs (e.g. similarity scores, overlap ratios).",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
+`
