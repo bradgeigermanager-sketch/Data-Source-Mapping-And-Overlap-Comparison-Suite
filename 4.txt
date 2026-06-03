@@ -1,0 +1,209 @@
+Overview
+
+Volume semantic equivalence = “same content, regardless of encoding/container/format/partitioning”.  
+This pack is a set of metric nodes (for your DAG) that output semantic similarity/identity scores for different domains.
+
+---
+
+1. Metric set (semantic equivalence)
+
+Video
+
+- videoframehash_similarity — perceptual frame hash similarity.
+- videotimelinecoverage — duration + frame‑rate + timeline alignment.
+- videoscenestructure_similarity — scene/shot boundary similarity.
+
+Audio
+
+- audiofingerprintsimilarity — Shazam‑style fingerprint similarity.
+- audiotimelinecoverage — duration + silence profile + envelope similarity.
+
+Image
+
+- imageperceptualhash_similarity — pHash/dHash/aHash similarity.
+- imagestructuresimilarity — SSIM‑like structural similarity.
+
+Table / structured
+
+- tablerowset_similarity — row‑set Jaccard / overlap.
+- tableschemasemantic_similarity — schema + logical type + key structure.
+- tabledistributionsimilarity — per‑column distribution similarity.
+
+Binary / generic
+
+- binarystructuresimilarity — structural layout similarity.
+- binarycontentsemantic_similarity — domain‑specific plugin (e.g., protobuf, parquet).
+
+Composite
+
+- semanticequivalencescore — fuses domain metrics into a single score.
+- semanticequivalencedecision — boolean decision given thresholds.
+
+---
+
+2. Canonical metric node definitions (JSON)
+
+2.1 videoframehash_similarity
+
+`json
+{
+  "id": "videoframehash_similarity",
+  "op": "metric",
+  "description": "Perceptual frame-hash similarity between two video volumes.",
+  "inputs": [
+    { "name": "left", "type": "volume_ref" },
+    { "name": "right", "type": "volume_ref" }
+  ],
+  "outputs": [
+    { "name": "similarity", "type": "semantic_score" }
+  ],
+  "config": {
+    "hash": "phash",
+    "frameSampleRate": 1
+  }
+}
+`
+
+2.2 audiofingerprintsimilarity
+
+`json
+{
+  "id": "audiofingerprintsimilarity",
+  "op": "metric",
+  "description": "Audio fingerprint similarity between two audio volumes.",
+  "inputs": [
+    { "name": "left", "type": "volume_ref" },
+    { "name": "right", "type": "volume_ref" }
+  ],
+  "outputs": [
+    { "name": "similarity", "type": "semantic_score" }
+  ],
+  "config": {
+    "fingerprint": "chromaprint",
+    "segmentLengthSec": 5
+  }
+}
+`
+
+2.3 imageperceptualhash_similarity
+
+`json
+{
+  "id": "imageperceptualhash_similarity",
+  "op": "metric",
+  "description": "Perceptual hash similarity between two image volumes.",
+  "inputs": [
+    { "name": "left", "type": "volume_ref" },
+    { "name": "right", "type": "volume_ref" }
+  ],
+  "outputs": [
+    { "name": "similarity", "type": "semantic_score" }
+  ],
+  "config": {
+    "hash": "phash"
+  }
+}
+`
+
+2.4 tablerowset_similarity
+
+`json
+{
+  "id": "tablerowset_similarity",
+  "op": "metric",
+  "description": "Row-set similarity between two table volumes.",
+  "inputs": [
+    { "name": "left", "type": "volume_ref" },
+    { "name": "right", "type": "volume_ref" }
+  ],
+  "outputs": [
+    { "name": "jaccard", "type": "number" }
+  ],
+  "config": {
+    "sampleRows": 10000,
+    "primaryKeyStrategy": "auto_detect"
+  }
+}
+`
+
+2.5 tabledistributionsimilarity
+
+`json
+{
+  "id": "tabledistributionsimilarity",
+  "op": "metric",
+  "description": "Per-column distribution similarity between two table volumes.",
+  "inputs": [
+    { "name": "left", "type": "volume_ref" },
+    { "name": "right", "type": "volume_ref" }
+  ],
+  "outputs": [
+    { "name": "similarity", "type": "semantic_score" }
+  ],
+  "config": {
+    "maxColumns": 50,
+    "metric": "wasserstein"
+  }
+}
+`
+
+---
+
+3. Composite semantic equivalence metric
+
+3.1 semanticequivalencescore
+
+`json
+{
+  "id": "semanticequivalencescore",
+  "op": "metric",
+  "description": "Unified semantic equivalence score across domain-specific metrics.",
+  "inputs": [
+    { "name": "videoSimilarity", "type": "semantic_score" },
+    { "name": "audioSimilarity", "type": "semantic_score" },
+    { "name": "imageSimilarity", "type": "semantic_score" },
+    { "name": "tableSimilarity", "type": "semantic_score" }
+  ],
+  "outputs": [
+    { "name": "score", "type": "semantic_score" }
+  ],
+  "config": {
+    "weights": {
+      "videoSimilarity": 0.4,
+      "audioSimilarity": 0.2,
+      "imageSimilarity": 0.2,
+      "tableSimilarity": 0.2
+    }
+  }
+}
+`
+
+3.2 semanticequivalencedecision
+
+`json
+{
+  "id": "semanticequivalencedecision",
+  "op": "metric",
+  "description": "Boolean semantic equivalence decision from a semantic score.",
+  "inputs": [
+    { "name": "score", "type": "semantic_score" }
+  ],
+  "outputs": [
+    { "name": "equivalent", "type": "boolean" }
+  ],
+  "config": {
+    "threshold": 0.95
+  }
+}
+`
+
+---
+
+4. How it plugs into VME and the DAG
+
+- In VME, semantic_compare nodes call into this pack and consume score/equivalent.
+- In the volume DAG, you wire:
+  - domain metrics → semanticequivalencescore → semanticequivalencedecision.
+- In the identity pack, semanticScore is one of the inputs to volumeidentityscore.
+
+If you want, next step we can sketch a concrete volume semantic DAG (nodes + edges JSON) for, say, “video equivalence across codecs”.
