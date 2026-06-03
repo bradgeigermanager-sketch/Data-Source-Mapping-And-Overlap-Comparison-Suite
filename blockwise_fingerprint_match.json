@@ -1,0 +1,16 @@
+{
+  "id": "blockwise_fingerprint_match",
+  "op": "metric",
+  "description": "Rolling hash fingerprint match across blocks.",
+  "inputs": [
+    { "name": "left", "type": "volume_ref" },
+    { "name": "right", "type": "volume_ref" }
+  ],
+  "outputs": [
+    { "name": "match", "type": "boolean" }
+  ],
+  "config": {
+    "blockSize": 4096,
+    "fingerprint": "rabin"
+  }
+}
