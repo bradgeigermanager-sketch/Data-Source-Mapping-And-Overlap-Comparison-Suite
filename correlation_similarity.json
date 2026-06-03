@@ -1,0 +1,13 @@
+{
+  "id": "correlation_similarity",
+  "op": "metric",
+  "description": "Similarity of correlation structures.",
+  "inputs": [
+    { "name": "leftMatrix", "type": "object" },
+    { "name": "rightMatrix", "type": "object" }
+  ],
+  "outputs": [
+    { "name": "score", "type": "similarity_score" }
+  ],
+  "config": {}
+}
