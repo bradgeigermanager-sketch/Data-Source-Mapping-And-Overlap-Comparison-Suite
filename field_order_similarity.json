@@ -1,0 +1,13 @@
+{
+  "id": "field_order_similarity",
+  "op": "metric",
+  "description": "Compares relative ordering of fields.",
+  "inputs": [
+    { "name": "left", "type": "dataset_ref" },
+    { "name": "right", "type": "dataset_ref" }
+  ],
+  "outputs": [
+    { "name": "score", "type": "similarity_score" }
+  ],
+  "config": {}
+}
