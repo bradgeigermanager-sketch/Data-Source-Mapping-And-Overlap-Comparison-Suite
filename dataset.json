@@ -1,0 +1,21 @@
+{
+  "$id": "Dataset",
+  "type": "object",
+  "required": ["id", "sourceId", "name", "logicalType"],
+  "properties": {
+    "id": { "type": "string" },
+    "sourceId": { "type": "string" },
+    "name": { "type": "string" },
+    "path": { "type": "string" },
+    "logicalType": {
+      "type": "string",
+      "enum": ["table", "view", "file", "api_resource", "stream"]
+    },
+    "rowCountEstimate": { "type": "number" },
+    "sampleProfileId": { "type": "string" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}
