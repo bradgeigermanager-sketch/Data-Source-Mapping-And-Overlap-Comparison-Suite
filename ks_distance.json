@@ -1,0 +1,13 @@
+{
+  "id": "ks_distance",
+  "op": "metric",
+  "description": "Kolmogorov–Smirnov distance for numeric distributions.",
+  "inputs": [
+    { "name": "leftSample", "type": "array" },
+    { "name": "rightSample", "type": "array" }
+  ],
+  "outputs": [
+    { "name": "distance", "type": "number" }
+  ],
+  "config": {}
+}
