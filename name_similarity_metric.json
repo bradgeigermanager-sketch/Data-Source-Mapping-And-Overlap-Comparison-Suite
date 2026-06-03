@@ -1,0 +1,16 @@
+{
+  "id": "name_similarity",
+  "op": "metric",
+  "description": "Tokenized name similarity using cosine/Jaro-Winkler.",
+  "inputs": [
+    { "name": "left", "type": "field_ref" },
+    { "name": "right", "type": "field_ref" }
+  ],
+  "outputs": [
+    { "name": "score", "type": "similarity_score" }
+  ],
+  "config": {
+    "method": "cosine",
+    "tokenizer": "camel_case"
+  }
+}
