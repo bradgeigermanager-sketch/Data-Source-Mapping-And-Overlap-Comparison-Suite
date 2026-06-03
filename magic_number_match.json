@@ -1,0 +1,13 @@
+{
+  "id": "magic_number_match",
+  "op": "metric",
+  "description": "Checks if file signatures (magic numbers) match.",
+  "inputs": [
+    { "name": "left", "type": "volume_ref" },
+    { "name": "right", "type": "volume_ref" }
+  ],
+  "outputs": [
+    { "name": "match", "type": "boolean" }
+  ],
+  "config": {}
+}
