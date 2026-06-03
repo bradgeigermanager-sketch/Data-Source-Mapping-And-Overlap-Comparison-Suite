@@ -1,0 +1,23 @@
+{
+  "id": "vol_123",
+  "sourceId": "src_abc",
+  "kind": "file|object|table_partition|memory_region|virtual",
+  "path": "/data/foo.parquet",
+  "sizeBytes": 1234567,
+  "hashes": {
+    "md5": "…",
+    "sha256": "…",
+    "blockHash": "…"
+  },
+  "encoding": {
+    "format": "parquet|csv|mp4|json|raw",
+    "codec": "gzip|snappy|h264|none",
+    "schemaFingerprint": "…"
+  },
+  "stats": {
+    "rowCount": 100000,
+    "duration": 3600,
+    "resolution": "1920x1080"
+  },
+  "metadata": {}
+}
