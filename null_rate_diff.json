@@ -1,0 +1,13 @@
+{
+  "id": "null_rate_diff",
+  "op": "metric",
+  "description": "Difference in null proportions between fields.",
+  "inputs": [
+    { "name": "leftStats", "type": "object" },
+    { "name": "rightStats", "type": "object" }
+  ],
+  "outputs": [
+    { "name": "delta", "type": "number" }
+  ],
+  "config": {}
+}
