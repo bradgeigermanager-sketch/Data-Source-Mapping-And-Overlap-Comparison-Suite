@@ -1,0 +1,15 @@
+{
+  "id": "blockwise_delta_ratio",
+  "op": "metric",
+  "description": "Ratio of differing blocks.",
+  "inputs": [
+    { "name": "left", "type": "volume_ref" },
+    { "name": "right", "type": "volume_ref" }
+  ],
+  "outputs": [
+    { "name": "deltaRatio", "type": "number" }
+  ],
+  "config": {
+    "blockSize": 4096
+  }
+}
