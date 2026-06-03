@@ -1,0 +1,25 @@
+{
+  "$id": "DataSource",
+  "type": "object",
+  "required": ["id", "name", "kind", "connection"],
+  "properties": {
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": ["postgres", "mysql", "mssql", "bigquery", "s3", "gcs", "rest_api", "csv", "parquet", "other"]
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "connection": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}
