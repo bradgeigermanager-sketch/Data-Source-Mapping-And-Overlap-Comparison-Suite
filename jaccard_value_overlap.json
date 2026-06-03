@@ -1,0 +1,13 @@
+{
+  "id": "jaccard_value_overlap",
+  "op": "metric",
+  "description": "Jaccard overlap of value sets.",
+  "inputs": [
+    { "name": "leftSample", "type": "array" },
+    { "name": "rightSample", "type": "array" }
+  ],
+  "outputs": [
+    { "name": "jaccard", "type": "number" }
+  ],
+  "config": {}
+}
