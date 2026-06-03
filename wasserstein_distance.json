@@ -1,0 +1,13 @@
+{
+  "id": "wasserstein_distance",
+  "op": "metric",
+  "description": "Earth-mover distance for numeric distributions.",
+  "inputs": [
+    { "name": "leftSample", "type": "array" },
+    { "name": "rightSample", "type": "array" }
+  ],
+  "outputs": [
+    { "name": "distance", "type": "number" }
+  ],
+  "config": {}
+}
