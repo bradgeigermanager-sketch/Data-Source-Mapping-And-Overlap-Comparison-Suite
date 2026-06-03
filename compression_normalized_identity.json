@@ -1,0 +1,13 @@
+{
+  "id": "compression_normalized_identity",
+  "op": "metric",
+  "description": "Identity after decompressing both volumes.",
+  "inputs": [
+    { "name": "left", "type": "volume_ref" },
+    { "name": "right", "type": "volume_ref" }
+  ],
+  "outputs": [
+    { "name": "identityScore", "type": "number" }
+  ],
+  "config": {}
+}
