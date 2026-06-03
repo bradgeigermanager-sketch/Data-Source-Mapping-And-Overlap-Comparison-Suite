@@ -1,0 +1,83 @@
+{
+  "$id": "https://example.com/schema/metric-node.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Metric Node Definition",
+  "type": "object",
+  "required": ["id", "op", "inputs", "outputs"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this metric node within the DAG."
+    },
+
+    "op": {
+      "type": "string",
+      "const": "metric",
+      "description": "Indicates this node is a metric operator."
+    },
+
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the metric."
+    },
+
+    "inputs": {
+      "type": "array",
+      "description": "Typed input ports for this metric.",
+      "items": { "$ref": "#/$defs/Port" },
+      "minItems": 1
+    },
+
+    "outputs": {
+      "type": "array",
+      "description": "Typed output ports for this metric.",
+      "items": { "$ref": "#/$defs/Port" },
+      "minItems": 1
+    },
+
+    "config": {
+      "type": "object",
+      "description": "Metric-specific configuration object.",
+      "additionalProperties": true
+    },
+
+    "metadata": {
+      "type": "object",
+      "description": "Optional metadata for UI, lineage, or registry.",
+      "additionalProperties": true
+    }
+  },
+
+  "$defs": {
+    "Port": {
+      "type": "object",
+      "required": ["name", "type"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Port name used for wiring edges."
+        },
+        "type": {
+          "type": "string",
+          "description": "Data type flowing through this port.",
+          "enum": [
+            "number",
+            "string",
+            "boolean",
+            "object",
+            "array",
+            "binary",
+            "field_ref",
+            "dataset_ref",
+            "volume_ref",
+            "metric_result",
+            "distribution",
+            "similarity_score",
+            "semantic_score"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
