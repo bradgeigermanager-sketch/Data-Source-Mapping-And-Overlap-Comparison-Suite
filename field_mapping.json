@@ -1,0 +1,31 @@
+{
+  "$id": "FieldMapping",
+  "type": "object",
+  "required": ["id", "leftFieldId", "rightFieldId", "status"],
+  "properties": {
+    "id": { "type": "string" },
+    "leftFieldId": { "type": "string" },
+    "rightFieldId": { "type": "string" },
+    "similarityScore": { "type": "number" },
+    "status": {
+      "type": "string",
+      "enum": ["suggested", "accepted", "rejected", "deprecated"]
+    },
+    "transformation": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["identity", "cast", "normalize", "lookup", "custom_expression"]
+        },
+        "expression": { "type": "string" }
+      },
+      "required": ["kind"],
+      "additionalProperties": false
+    },
+    "notes": { "type": "string" },
+    "createdBy": { "type": "string" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}
