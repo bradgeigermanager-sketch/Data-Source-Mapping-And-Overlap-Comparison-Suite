@@ -1,0 +1,49 @@
+{
+  "$id": "OverlapProfile",
+  "type": "object",
+  "required": ["id", "leftDatasetId", "rightDatasetId", "mode"],
+  "properties": {
+    "id": { "type": "string" },
+    "leftDatasetId": { "type": "string" },
+    "rightDatasetId": { "type": "string" },
+    "mode": {
+      "type": "string",
+      "enum": ["schema_only", "sample_rows", "full_stats"]
+    },
+    "fieldComparisons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["leftFieldId", "rightFieldId"],
+        "properties": {
+          "leftFieldId": { "type": "string" },
+          "rightFieldId": { "type": "string" },
+          "nameSimilarity": { "type": "number" },
+          "typeCompatibility": { "type": "string" },
+          "valueOverlap": {
+            "type": "object",
+            "properties": {
+              "jaccard": { "type": "number" },
+              "nullRateDiff": { "type": "number" },
+              "distributionDistance": { "type": "number" }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "rowOverlapEstimate": {
+      "type": "object",
+      "properties": {
+        "joinKeyFieldMappingIds": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "overlapRate": { "type": "number" },
+        "leftOnlyRate": { "type": "number" },
+        "rightOnlyRate": { "type": "number" }
+      }
+    },
+    "createdAt": { "type": "string", "format": "date-time" }
+  }
+}
