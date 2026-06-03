@@ -1,0 +1,576 @@
+The DAG is the heart of the whole system—your universal execution substrate for metrics, mappings, transformations, and equivalence logic. Let’s lay out a complete, formal, atomic DAG model that fits your schema‑driven, modular, measurement‑first architecture.
+
+Below is the full DAG specification, including:
+
+- Node schema  
+- Edge schema  
+- Execution semantics  
+- Deterministic evaluation rules  
+- Provenance + lineage  
+- Multi‑layer DAGs (metric DAG, mapping DAG, volume DAG)  
+- A unified DAG registry  
+
+This is the canonical version you can use across your entire ecosystem.
+
+---
+
+🧩 DAG Core Model
+The DAG is a typed, acyclic, deterministic computation graph where:
+
+- Nodes = operations  
+- Edges = data dependencies  
+- Graphs = versioned, schema‑validated artifacts  
+
+This is the atomic unit of your measurement and mapping engine.
+
+---
+
+📘 DAG JSON Schema (Complete)
+
+`json
+{
+  "$id": "https://example.com/schema/dag.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Directed Acyclic Graph (DAG)",
+  "type": "object",
+  "required": ["id", "version", "kind", "nodes", "edges"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique DAG identifier."
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of this DAG definition."
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "metric_dag",
+        "mapping_dag",
+        "volume_dag",
+        "transformation_dag",
+        "lineage_dag"
+      ],
+      "description": "DAG category."
+    },
+    "description": {
+      "type": "string"
+    },
+    "nodes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Node" }
+    },
+    "edges": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Edge" }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+
+  "$defs": {
+    "Node": {
+      "type": "object",
+      "required": ["id", "op", "inputs", "outputs"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Node identifier unique within the DAG."
+        },
+        "op": {
+          "type": "string",
+          "description": "Operation type (metric, transform, compare, etc.)."
+        },
+        "config": {
+          "type": "object",
+          "description": "Operation-specific configuration.",
+          "additionalProperties": true
+        },
+        "inputs": {
+          "type": "array",
+          "description": "Logical input ports.",
+          "items": { "$ref": "#/$defs/Port" }
+        },
+        "outputs": {
+          "type": "array",
+          "description": "Logical output ports.",
+          "items": { "$ref": "#/$defs/Port" }
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "Port": {
+      "type": "object",
+      "required": ["name", "type"],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "description": "Data type flowing through this port.",
+          "enum": [
+            "number",
+            "string",
+            "boolean",
+            "object",
+            "array",
+            "binary",
+            "volume_ref",
+            "field_ref",
+            "dataset_ref",
+            "metric_result",
+            "mapping_expr",
+            "volume_expr"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "Edge": {
+      "type": "object",
+      "required": ["fromNode", "fromPort", "toNode", "toPort"],
+      "properties": {
+        "fromNode": {
+          "type": "string"
+        },
+        "fromPort": {
+          "type": "string"
+        },
+        "toNode": {
+          "type": "string"
+        },
+        "toPort": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
+`
+
+---
+
+🧠 DAG Execution Semantics
+
+1. Topological Ordering
+The DAG executor performs:
+
+1. Compute in‑degree for all nodes  
+2. Push all zero‑in‑degree nodes into queue  
+3. Pop, execute, propagate outputs  
+4. Decrement downstream in‑degree  
+5. Continue until queue empty  
+
+This guarantees:
+
+- Deterministic execution  
+- No cycles  
+- No ambiguous dependencies  
+
+---
+
+⚙️ Node Execution Contract
+
+Every node implements:
+
+`ts
+interface NodeExecutor {
+  op: string;
+  run(inputs: Record<string, any>, config: any): Promise<Record<string, any>>;
+}
+`
+
+Inputs and outputs are typed, validated against the schema.
+
+---
+
+🧬 DAG Provenance & Lineage
+
+Every DAG execution produces a DAG Run Record:
+
+`json
+{
+  "dagId": "metricdag001",
+  "version": "1.0.0",
+  "runId": "run_abc123",
+  "timestamp": "2026-06-03T14:00:00Z",
+  "nodeResults": {
+    "nodeA": { "outputs": { "similarity": 0.98 } },
+    "nodeB": { "outputs": { "compatible": true } },
+    "nodeC": { "outputs": { "semanticScore": 0.99 } }
+  }
+}
+`
+
+This gives you:
+
+- Full reproducibility  
+- Full auditability  
+- Full lineage  
+
+---
+
+🧱 Multi‑Layer DAGs
+
+Your system uses five DAG types, all sharing the same schema:
+
+1. Metric DAG
+Computes similarity, overlap, compatibility.
+
+2. Mapping DAG
+Computes field‑level or volume‑level mapping expressions.
+
+3. Volume DAG
+Computes identity, variant, equivalence.
+
+4. Transformation DAG
+Computes DSL expressions → SQL / Spark / dbt.
+
+5. Lineage DAG
+Tracks derivation of datasets, volumes, mappings.
+
+All DAGs share:
+
+- Node schema  
+- Edge schema  
+- Execution semantics  
+- Versioning  
+- Provenance  
+
+This gives you a unified execution substrate.
+
+---
+
+🗂️ DAG Registry (Unified)
+
+A registry entry looks like:
+
+`json
+{
+  "id": "metricdagdefault",
+  "kind": "metric_dag",
+  "version": "1.2.0",
+  "graph": { / DAG JSON / },
+  "createdBy": "system",
+  "createdAt": "2026-06-03T14:00:00Z",
+  "tags": ["default", "similarity", "schema"]
+}
+`
+
+You can store:
+
+- Multiple DAG versions  
+- Multiple DAG kinds  
+- Multiple DAG profiles  
+
+---
+
+🔗 Want to go deeper?
+
+Choose the next layer you want to expand:
+
+- metric node library  
+- volume DAG examples  
+- mapping DAG for field alignment  
+- transformation DAG for DSL→SQL  
+
+Each one plugs directly into the schema above.The DAG is the heart of the whole system—your universal execution substrate for metrics, mappings, transformations, and equivalence logic. Let’s lay out a complete, formal, atomic DAG model that fits your schema‑driven, modular, measurement‑first architecture.
+
+Below is the full DAG specification, including:
+
+- Node schema  
+- Edge schema  
+- Execution semantics  
+- Deterministic evaluation rules  
+- Provenance + lineage  
+- Multi‑layer DAGs (metric DAG, mapping DAG, volume DAG)  
+- A unified DAG registry  
+
+This is the canonical version you can use across your entire ecosystem.
+
+---
+
+🧩 DAG Core Model
+The DAG is a typed, acyclic, deterministic computation graph where:
+
+- Nodes = operations  
+- Edges = data dependencies  
+- Graphs = versioned, schema‑validated artifacts  
+
+This is the atomic unit of your measurement and mapping engine.
+
+---
+
+📘 DAG JSON Schema (Complete)
+
+`json
+{
+  "$id": "https://example.com/schema/dag.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Directed Acyclic Graph (DAG)",
+  "type": "object",
+  "required": ["id", "version", "kind", "nodes", "edges"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique DAG identifier."
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of this DAG definition."
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "metric_dag",
+        "mapping_dag",
+        "volume_dag",
+        "transformation_dag",
+        "lineage_dag"
+      ],
+      "description": "DAG category."
+    },
+    "description": {
+      "type": "string"
+    },
+    "nodes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Node" }
+    },
+    "edges": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Edge" }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+
+  "$defs": {
+    "Node": {
+      "type": "object",
+      "required": ["id", "op", "inputs", "outputs"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Node identifier unique within the DAG."
+        },
+        "op": {
+          "type": "string",
+          "description": "Operation type (metric, transform, compare, etc.)."
+        },
+        "config": {
+          "type": "object",
+          "description": "Operation-specific configuration.",
+          "additionalProperties": true
+        },
+        "inputs": {
+          "type": "array",
+          "description": "Logical input ports.",
+          "items": { "$ref": "#/$defs/Port" }
+        },
+        "outputs": {
+          "type": "array",
+          "description": "Logical output ports.",
+          "items": { "$ref": "#/$defs/Port" }
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "Port": {
+      "type": "object",
+      "required": ["name", "type"],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "description": "Data type flowing through this port.",
+          "enum": [
+            "number",
+            "string",
+            "boolean",
+            "object",
+            "array",
+            "binary",
+            "volume_ref",
+            "field_ref",
+            "dataset_ref",
+            "metric_result",
+            "mapping_expr",
+            "volume_expr"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "Edge": {
+      "type": "object",
+      "required": ["fromNode", "fromPort", "toNode", "toPort"],
+      "properties": {
+        "fromNode": {
+          "type": "string"
+        },
+        "fromPort": {
+          "type": "string"
+        },
+        "toNode": {
+          "type": "string"
+        },
+        "toPort": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
+`
+
+---
+
+🧠 DAG Execution Semantics
+
+1. Topological Ordering
+The DAG executor performs:
+
+1. Compute in‑degree for all nodes  
+2. Push all zero‑in‑degree nodes into queue  
+3. Pop, execute, propagate outputs  
+4. Decrement downstream in‑degree  
+5. Continue until queue empty  
+
+This guarantees:
+
+- Deterministic execution  
+- No cycles  
+- No ambiguous dependencies  
+
+---
+
+⚙️ Node Execution Contract
+
+Every node implements:
+
+`ts
+interface NodeExecutor {
+  op: string;
+  run(inputs: Record<string, any>, config: any): Promise<Record<string, any>>;
+}
+`
+
+Inputs and outputs are typed, validated against the schema.
+
+---
+
+🧬 DAG Provenance & Lineage
+
+Every DAG execution produces a DAG Run Record:
+
+`json
+{
+  "dagId": "metricdag001",
+  "version": "1.0.0",
+  "runId": "run_abc123",
+  "timestamp": "2026-06-03T14:00:00Z",
+  "nodeResults": {
+    "nodeA": { "outputs": { "similarity": 0.98 } },
+    "nodeB": { "outputs": { "compatible": true } },
+    "nodeC": { "outputs": { "semanticScore": 0.99 } }
+  }
+}
+`
+
+This gives you:
+
+- Full reproducibility  
+- Full auditability  
+- Full lineage  
+
+---
+
+🧱 Multi‑Layer DAGs
+
+Your system uses five DAG types, all sharing the same schema:
+
+1. Metric DAG
+Computes similarity, overlap, compatibility.
+
+2. Mapping DAG
+Computes field‑level or volume‑level mapping expressions.
+
+3. Volume DAG
+Computes identity, variant, equivalence.
+
+4. Transformation DAG
+Computes DSL expressions → SQL / Spark / dbt.
+
+5. Lineage DAG
+Tracks derivation of datasets, volumes, mappings.
+
+All DAGs share:
+
+- Node schema  
+- Edge schema  
+- Execution semantics  
+- Versioning  
+- Provenance  
+
+This gives you a unified execution substrate.
+
+---
+
+🗂️ DAG Registry (Unified)
+
+A registry entry looks like:
+
+`json
+{
+  "id": "metricdagdefault",
+  "kind": "metric_dag",
+  "version": "1.2.0",
+  "graph": { / DAG JSON / },
+  "createdBy": "system",
+  "createdAt": "2026-06-03T14:00:00Z",
+  "tags": ["default", "similarity", "schema"]
+}
+`
+
+You can store:
+
+- Multiple DAG versions  
+- Multiple DAG kinds  
+- Multiple DAG profiles  
+
+
+- metric node library  
+- volume DAG examples  
+- mapping DAG for field alignment  
+- transformation DAG for DSL→SQL
